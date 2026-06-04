@@ -49,7 +49,11 @@ let package = Package(
         // In standalone CI, the checkout step clones SharpAI/mlx-swift
         // into ../mlx-swift so this path resolves correctly.
         // ─────────────────────────────────────────────────────────────────────────
-        .package(path: "../mlx-swift"),
+        // Repointed at SharpAI/mlx-swift on GitHub instead of a sibling
+        // checkout path, so downstream packages (like our BenchmarkApp) can
+        // depend on this without needing a sibling clone.
+        .package(url: "https://github.com/SharpAI/mlx-swift",
+                 revision: "133864c733c8d4178547f8fe92897da6a788368f"),
 
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "600.0.0-latest"),
     ],
