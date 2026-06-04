@@ -104,7 +104,7 @@ public struct LFM2Configuration: Codable, Sendable {
     }
 }
 
-class LFM2Attention: Module {
+public class LFM2Attention: Module {
     let args: LFM2Configuration
     let scale: Float
     let headDim: Int
@@ -175,7 +175,7 @@ class LFM2Attention: Module {
     }
 }
 
-class LFM2ShortConv: Module {
+public class LFM2ShortConv: Module {
     let args: LFM2Configuration
     let layerIdx: Int
     let lCache: Int
@@ -230,7 +230,7 @@ class LFM2ShortConv: Module {
     }
 }
 
-class LFM2MLP: Module, UnaryLayer {
+public class LFM2MLP: Module, UnaryLayer {
     @ModuleInfo(key: "w1") var w1: Linear
     @ModuleInfo(key: "w2") var w2: Linear
     @ModuleInfo(key: "w3") var w3: Linear
@@ -262,7 +262,7 @@ class LFM2MLP: Module, UnaryLayer {
     }
 }
 
-class LFM2DecoderLayer: Module {
+public class LFM2DecoderLayer: Module {
     let isAttentionLayer: Bool
 
     @ModuleInfo(key: "self_attn") var attention: LFM2Attention?
@@ -307,11 +307,11 @@ class LFM2DecoderLayer: Module {
 }
 
 public class LFM2ModelInner: Module {
-    let args: LFM2Configuration
-    let vocabularySize: Int
-    let numHiddenLayers: Int
+    public let args: LFM2Configuration
+    public let vocabularySize: Int
+    public let numHiddenLayers: Int
 
-    fileprivate let layers: [LFM2DecoderLayer]
+    public let layers: [LFM2DecoderLayer]
 
     @ModuleInfo(key: "embed_tokens") var embedTokens: Embedding
     @ModuleInfo(key: "embedding_norm") var embeddingNorm: RMSNorm
