@@ -246,11 +246,15 @@ private class Gemma4AssistantAttention: Module {
     let scale: Float
 
     @ModuleInfo(key: "q_proj") var qProj: Linear
-    @ModuleInfo(key: "k_proj") var kProj: Linear
-    @ModuleInfo(key: "v_proj") var vProj: Linear
+    // k_proj/v_proj/k_norm are NOT shipped by the E2B/E4B assistant checkpoint
+    // — those layers always use shared KV from the target. Declared Optional
+    // so weight loading doesn't fail with key-not-found; constructed only
+    // when the config indicates non-kv-shared mode (currently never).
+    @ModuleInfo(key: "k_proj") var kProj: Linear?
+    @ModuleInfo(key: "v_proj") var vProj: Linear?
     @ModuleInfo(key: "o_proj") var oProj: Linear
     @ModuleInfo(key: "q_norm") var qNorm: RMSNorm
-    @ModuleInfo(key: "k_norm") var kNorm: RMSNorm
+    @ModuleInfo(key: "k_norm") var kNorm: RMSNorm?
 
     init(_ config: Gemma4AssistantTextConfiguration, layerIdx: Int) {
         self.layerType = config.layerTypes[layerIdx]
@@ -262,11 +266,10 @@ private class Gemma4AssistantAttention: Module {
 
         let dim = config.hiddenSize
         self._qProj.wrappedValue = Linear(dim, nHeads * effectiveHeadDim, bias: false)
-        self._kProj.wrappedValue = Linear(dim, nKvHeads * effectiveHeadDim, bias: false)
-        self._vProj.wrappedValue = Linear(dim, nKvHeads * effectiveHeadDim, bias: false)
         self._oProj.wrappedValue = Linear(nHeads * effectiveHeadDim, dim, bias: false)
         self._qNorm.wrappedValue = RMSNorm(dimensions: effectiveHeadDim, eps: config.rmsNormEps)
-        self._kNorm.wrappedValue = RMSNorm(dimensions: effectiveHeadDim, eps: config.rmsNormEps)
+        // kProj/vProj/kNorm intentionally left nil — assistant operates in
+        // kv-shared mode only; the checkpoint ships no weights for them.
 
         super.init()
     }
@@ -289,6 +292,10 @@ private class Gemma4AssistantAttention: Module {
             keys = sharedK
             values = sharedV
         } else {
+            guard let kProj = kProj, let vProj = vProj, let kNorm = kNorm else {
+                fatalError(
+                    "Gemma4AssistantAttention: sharedKV required — k_proj/v_proj/k_norm not constructed")
+            }
             var k = kProj(x).reshaped(B, L, nKvHeads, effectiveHeadDim)
             k = kNorm(k)
             keys = k.transposed(0, 2, 1, 3)
