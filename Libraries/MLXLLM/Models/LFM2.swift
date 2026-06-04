@@ -13,23 +13,23 @@ import MLXLMCommon
 import MLXNN
 
 public struct LFM2Configuration: Codable, Sendable {
-    let modelType: String
-    let vocabularySize: Int
-    let hiddenSize: Int
-    let hiddenLayers: Int
-    let attentionHeads: Int
-    let kvHeads: Int
-    let maxPositionEmbeddings: Int?
-    let normEps: Float
-    let convBias: Bool
-    let convLCache: Int
+    public let modelType: String
+    public let vocabularySize: Int
+    public let hiddenSize: Int
+    public let hiddenLayers: Int
+    public let attentionHeads: Int
+    public let kvHeads: Int
+    public let maxPositionEmbeddings: Int?
+    public let normEps: Float
+    public let convBias: Bool
+    public let convLCache: Int
     private let _blockDim: Int?
-    var blockDim: Int { _blockDim ?? hiddenSize }
+    public var blockDim: Int { _blockDim ?? hiddenSize }
     private let _blockFFDim: Int?
-    var blockFFDim: Int { _blockFFDim ?? hiddenSize }
-    let blockMultipleOf: Int
-    let blockFFNDimMultiplier: Float
-    let blockAutoAdjustFFDim: Bool
+    public var blockFFDim: Int { _blockFFDim ?? hiddenSize }
+    public let blockMultipleOf: Int
+    public let blockFFNDimMultiplier: Float
+    public let blockAutoAdjustFFDim: Bool
     private let _fullAttnIdxs: [Int]?
     private let layerTypes: [String]?
     private let ropeParameters: [String: StringOrNumber]?
@@ -46,8 +46,8 @@ public struct LFM2Configuration: Codable, Sendable {
 
         return Array(0 ..< hiddenLayers)
     }
-    let ropeTheta: Float
-    var headDimensions: Int { hiddenSize / attentionHeads }
+    public let ropeTheta: Float
+    public var headDimensions: Int { hiddenSize / attentionHeads }
 
     enum CodingKeys: String, CodingKey {
         case modelType = "model_type"
