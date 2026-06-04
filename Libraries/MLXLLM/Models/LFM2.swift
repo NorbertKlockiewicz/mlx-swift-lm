@@ -33,7 +33,7 @@ public struct LFM2Configuration: Codable, Sendable {
     private let _fullAttnIdxs: [Int]?
     private let layerTypes: [String]?
     private let ropeParameters: [String: StringOrNumber]?
-    var fullAttnIdxs: [Int] {
+    public var fullAttnIdxs: [Int] {
         if let fullAttnIdxs = _fullAttnIdxs {
             return fullAttnIdxs
         }
@@ -313,8 +313,8 @@ public class LFM2ModelInner: Module {
 
     public let layers: [LFM2DecoderLayer]
 
-    @ModuleInfo(key: "embed_tokens") var embedTokens: Embedding
-    @ModuleInfo(key: "embedding_norm") var embeddingNorm: RMSNorm
+    @ModuleInfo(key: "embed_tokens") public var embedTokens: Embedding
+    @ModuleInfo(key: "embedding_norm") public var embeddingNorm: RMSNorm
 
     public init(_ args: LFM2Configuration) {
         self.args = args
