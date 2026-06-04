@@ -463,7 +463,10 @@ public class Gemma4AssistantModel: Module, LLMModel, KVCacheDimensionProvider {
     let config: Gemma4AssistantConfiguration
 
     @ModuleInfo(key: "model") fileprivate var textModel: Gemma4AssistantTextModelInner
-    @ModuleInfo(key: "lm_head") var lmHead: Linear
+    // lmHead is only constructed when tie_word_embeddings=false. Tied
+    // checkpoints don't ship lm_head.weight — embed_tokens.weight doubles as
+    // the lm head.
+    @ModuleInfo(key: "lm_head") var lmHead: Linear?
     @ModuleInfo(key: "pre_projection") var preProjection: Linear
     @ModuleInfo(key: "post_projection") var postProjection: Linear
     @ModuleInfo(key: "masked_embedding") fileprivate var maskedEmbedding: CentroidMaskedEmbedder?
@@ -473,8 +476,10 @@ public class Gemma4AssistantModel: Module, LLMModel, KVCacheDimensionProvider {
         let hiddenSize = config.textConfig.hiddenSize
 
         self._textModel.wrappedValue = Gemma4AssistantTextModelInner(config.textConfig)
-        self._lmHead.wrappedValue = Linear(
-            hiddenSize, config.textConfig.vocabSize, bias: false)
+        if !config.tieWordEmbeddings {
+            self._lmHead.wrappedValue = Linear(
+                hiddenSize, config.textConfig.vocabSize, bias: false)
+        }
         self._preProjection.wrappedValue = Linear(
             2 * config.backboneHiddenSize, hiddenSize, bias: false)
         self._postProjection.wrappedValue = Linear(
@@ -501,10 +506,16 @@ public class Gemma4AssistantModel: Module, LLMModel, KVCacheDimensionProvider {
         let projectedState = postProjection(lastHidden)
 
         let logits: MLXArray
+        // When tied, the lm head reuses embed_tokens. When untied, the model
+        // ships its own lm_head Linear. Mirrors mlx-vlm's _lm_head_fn binding.
+        let lmHeadWeight = lmHead?.weight ?? textModel.embedTokens.weight
         if let maskedEmbedding {
-            logits = maskedEmbedding(lastHidden, lmHeadWeight: lmHead.weight)
-        } else {
+            logits = maskedEmbedding(lastHidden, lmHeadWeight: lmHeadWeight)
+        } else if let lmHead {
             logits = lmHead(lastHidden)
+        } else {
+            // Tied + no masked_embedding → use embed_tokens as the linear head.
+            logits = textModel.embedTokens.asLinear(lastHidden)
         }
 
         return Gemma4AssistantOutput(projectedState: projectedState, logits: logits)
